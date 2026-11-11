@@ -33,7 +33,7 @@ Successful map interaction tests use an SDK mock. Real Google authentication, ti
 
 ### Native PostgreSQL/PostGIS
 
-Docker Compose configuration is provided; Docker was unavailable in the local verification environment, so this deployment path is **not locally executed**.
+Docker Compose configuration is provided; Docker was unavailable in the local verification environment, so this Compose path is **not locally executed**. Native PostgreSQL 17/PostGIS 3.5 integration tests passed in [GitHub Actions](https://github.com/zbchen0129-crypto/us-city-explorer/actions/runs/42975897075), alongside frontend lint and build checks. This validates the CI service path, not a production deployment.
 
 ```sh
 export POSTGRES_PASSWORD='choose-a-local-password'
@@ -85,12 +85,12 @@ npm run build --prefix project_frontend
 
 Default integration tests create an isolated in-memory PGlite database, execute PostGIS SQL, import the checked-in snapshot twice, validate same-name cities/state filters, complete cursor traversal, cursor invalidation, input rejection, injection-like input, radius boundaries, viewport boundaries and antimeridian handling. `EXPLAIN (ANALYZE, BUFFERS)` checks that selective viewport/radius fixtures use the corresponding GiST indexes. Those plans are evidence for these queries and dataset, not a general performance guarantee.
 
-Native tests require an **empty disposable database** in `TEST_DATABASE_URL`. They replace city tables/data inside that database. `DATABASE_URL` is intentionally ignored by isolated tests. GitHub Actions defines native PostGIS service verification plus frontend checks; a remote CI pass is not claimed until the workflow actually runs.
+Native tests require an **empty disposable database** in `TEST_DATABASE_URL`. They replace city tables/data inside that database. `DATABASE_URL` is intentionally ignored by isolated tests. GitHub Actions runs native PostGIS service verification plus frontend checks. [Run 42975897075](https://github.com/zbchen0129-crypto/us-city-explorer/actions/runs/42975897075) passed all checks for source commit `793f8c7`.
 
 ## Publication and scope
 
 Publish the prepared source package with a fresh Git history. Do not upload the original repository, private career notes, local database, `.env` files, dependency directories, generated bundles or historical evidence directory. No project-wide open-source code license is granted at this stage; review authorship and choose a license before advertising the project as open source. GeoNames data remains separately governed by CC BY 4.0.
 
-Remaining work includes live Google validation, native-server/CI execution, accessibility and cross-browser testing, more representative search evaluation, and larger-dataset/load testing. Current automated checks are correctness checks, not real-user metrics.
+Remaining work includes live Google validation, local Compose and production deployment validation, accessibility and cross-browser testing, more representative search evaluation, and larger-dataset/load testing. Current automated checks are correctness checks, not real-user metrics.
 
 Technical references: [PGlite PostGIS extension](https://pglite.dev/extensions/), [PostGIS geography distance/index semantics](https://postgis.net/docs/ST_DWithin.html), [GeoNames format and license](https://download.geonames.org/export/dump/readme.txt).

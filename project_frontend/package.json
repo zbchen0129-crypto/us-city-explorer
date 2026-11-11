@@ -1,0 +1,23 @@
+{
+  "name": "project_frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vite --host 127.0.0.1 --port 8080",
+    "build": "vite build",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-vue": "^10.0.0",
+    "globals": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

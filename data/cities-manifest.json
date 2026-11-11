@@ -1,0 +1,12 @@
+{
+  "source": "https://download.geonames.org/export/dump/cities500.zip",
+  "sourceReadme": "https://download.geonames.org/export/dump/readme.txt",
+  "license": "CC BY 4.0",
+  "attribution": "GeoNames (https://www.geonames.org/), filtered and transformed to US populated-place records",
+  "retrievedAt": "2026-11-10T18:30:02.637224+00:00",
+  "archiveSha256": "ec22f97ef8c7f7b2965d113aeea6d055f78c09876398a299f63f6a819ad4cce1",
+  "outputSha256": "63365c9843650cf85782ae8658b15888370fb013fb9f83c823360e11d0aa349d",
+  "records": 21786,
+  "rejected": [],
+  "scope": "US country-code P-class records in cities500; not all incorporated cities or all US territories"
+}

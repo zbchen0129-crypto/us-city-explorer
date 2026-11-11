@@ -4,7 +4,7 @@ import tarfile,hashlib,json,re
 root=Path(__file__).resolve().parents[1]
 required=['README.md','compose.yaml','.gitignore','.github/workflows/ci.yml','data/regions.json','data/cities.json','data/cities-manifest.json','scripts/prepare-cities.py','scripts/prepare-release.py']
 for d,names in {
- 'project_backend':['package.json','package-lock.json','server.js','database.js','import-cities.js','cities.js','search.js','evaluate-search.js','sql/001-cities.sql','test/api.test.js','test/cities.test.js','test/search.test.js'],
+ 'project_backend':['package.json','package-lock.json','server.js','database.js','import-cities.js','cities.js','density.js','search.js','evaluate-search.js','sql/001-cities.sql','test/api.test.js','test/cities.test.js','test/density.test.js','test/search.test.js'],
  'project_frontend':['package.json','package-lock.json','index.html','vite.config.mjs','eslint.config.mjs','.env.example','src/App.vue','src/main.js','src/maps.js','src/cities.js'],
 }.items():required.extend(d+'/'+n for n in names)
 files=sorted(required)

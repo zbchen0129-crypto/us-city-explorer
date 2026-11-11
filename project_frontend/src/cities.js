@@ -6,7 +6,7 @@ export async function findCities(input, signal) {
       headers: { "Content-Type": "application/json" },
       signal,
       body: JSON.stringify({
-        query: `query Cities($input:CitySearchInput){cities(input:$input){nodes{id name state population latitude longitude distanceKm} pageInfo{hasNextPage endCursor} datasetVersion}}`,
+        query: `query Cities($input:CitySearchInput){cities(input:$input){nodes{id name state population latitude longitude distanceKm} pageInfo{hasNextPage endCursor} datasetVersion density{level total cells{id count latitude longitude bounds{west east south north}}}}}`,
         variables: { input },
       }),
     },

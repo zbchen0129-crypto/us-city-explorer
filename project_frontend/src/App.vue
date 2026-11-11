@@ -60,6 +60,25 @@
       </button>
       <button type="button" @click="share">Copy search link</button>
     </form>
+    <div class="map-options">
+      <label>Map markers
+        <select v-model="markerMode" @change="drawMarkers">
+          <option value="density">All matches grouped by area</option>
+          <option value="page">Loaded cities only</option>
+        </select>
+      </label>
+      <label>Grid detail (apply with Search)
+        <select v-model.number="densityLevel">
+          <option :value="3">Coarse</option>
+          <option :value="4">Balanced</option>
+          <option :value="5">Fine</option>
+        </select>
+      </label>
+    </div>
+    <p v-if="density" role="status">
+      {{ density.total.toLocaleString() }} matching places · {{ density.cells.length }} occupied grid cells.
+      Counts cover all matching records, independent of list pagination. Click a group to zoom into its area.
+    </p>
     <p role="status">{{ mapStatus }}</p>
     <p v-if="shareStatus" role="status">{{ shareStatus }}</p>
     <p v-if="error" role="alert">{{ error }}</p>
@@ -117,6 +136,9 @@ export default {
     longitude: -122.4194,
     radiusKm: 25,
     cities: [],
+    density: null,
+    densityLevel: 4,
+    markerMode: "density",
     pageInfo: { hasNextPage: false },
     loading: false,
     error: "",
@@ -131,6 +153,8 @@ export default {
     const params = new URLSearchParams(location.search);
     this.query = params.get("q") || "";
     this.state = params.get("state") || "";
+    if (["3", "4", "5"].includes(params.get("grid"))) this.densityLevel = Number(params.get("grid"));
+    if (params.get("markers") === "page") this.markerMode = "page";
     if (["all", "near", "viewport"].includes(params.get("mode")))
       this.mode = params.get("mode");
     for (const field of ["latitude", "longitude", "radiusKm"])
@@ -169,7 +193,7 @@ export default {
   },
   methods: {
     input() {
-      const input = { query: this.query, state: this.state, first: 25 };
+      const input = { query: this.query, state: this.state, first: 25, densityLevel: this.densityLevel };
       if (this.mode === "near")
         input.near = {
           latitude: this.latitude,
@@ -204,17 +228,23 @@ export default {
       this.error = "";
       try {
         const input = more
-          ? { ...this.lastInput, after: this.pageInfo.endCursor }
+          ? { ...this.lastInput, densityLevel: null, after: this.pageInfo.endCursor }
           : this.input();
         if (!more) {
           this.lastInput = input;
           this.cities = [];
+          this.density = null;
+          this.drawMarkers();
           this.pageInfo = { hasNextPage: false };
         }
         const result = await findCities(input, this.controller.signal);
         if (sequence !== this.sequence || this.disposed) return;
+        if (more && result.datasetVersion !== this.datasetVersion)
+          throw new Error("Data changed. Run a new search.");
         this.cities = more ? [...this.cities, ...result.nodes] : result.nodes;
+        this.datasetVersion = result.datasetVersion;
         this.pageInfo = result.pageInfo;
+        if (!more) this.density = result.density;
         this.drawMarkers();
         this.writeUrl();
       } catch (error) {
@@ -231,6 +261,19 @@ export default {
     drawMarkers() {
       if (!this.mapReady) return;
       this.markers.forEach((marker) => marker.setMap(null));
+      if (this.markerMode === "density") {
+        this.markers = (this.density?.cells || []).map(cell => {
+          const marker = new this.maps.Marker({
+            map: this.map,
+            position: { lat: cell.latitude, lng: cell.longitude },
+            label: String(cell.count),
+            title: `${cell.count} populated places in this grid cell`,
+          });
+          marker.addListener("click", () => this.map.fitBounds(cell.bounds));
+          return markRaw(marker);
+        });
+        return;
+      }
       this.markers = this.cities.map((city) => {
         const marker = new this.maps.Marker({
           map: this.map,
@@ -256,6 +299,8 @@ export default {
       const p = new URLSearchParams();
       p.set("q", this.lastInput.query);
       p.set("state", this.lastInput.state);
+      p.set("grid", this.lastInput.densityLevel);
+      p.set("markers", this.markerMode);
       if (this.lastInput.near) {
         p.set("mode", "near");
         Object.entries(this.lastInput.near).forEach(([k, v]) => p.set(k, v));
@@ -267,6 +312,7 @@ export default {
       history.replaceState(null, "", location.pathname + "?" + p);
     },
     async share() {
+      if (this.lastInput) this.writeUrl();
       try {
         await navigator.clipboard.writeText(location.href);
         this.shareStatus = "Search link copied.";
@@ -301,7 +347,8 @@ h1 {
   font-size: 36px;
   margin: 8px 0;
 }
-form {
+form,
+.map-options {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;

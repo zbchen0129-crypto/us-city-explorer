@@ -40,7 +40,7 @@ function validate(input = {}) {
   }
   return { q, state, first, viewport, near };
 }
-function buildCityQuery(filter, cursor) {
+function buildCityPredicate(filter) {
   const args = [];
   const bind = (value) => {
     args.push(value);
@@ -71,6 +71,10 @@ function buildCityQuery(filter, cursor) {
     );
     distance = `ST_Distance(location::geography,${point})/1000.0`;
   }
+  return { args, bind, where, distance };
+}
+function buildCityQuery(filter, cursor) {
+  const { args, bind, where, distance } = buildCityPredicate(filter);
   if (cursor)
     where.push(
       `(lower(name),id)>(${bind(cursor.name)},${bind(cursor.id)}::bigint)`,
@@ -84,6 +88,9 @@ function createCitySearch(db) {
   return async ({ input = {} }) => {
     input = input || {};
     const filter = validate(input);
+    const densityLevel = input.densityLevel;
+    if (densityLevel != null && (!Number.isInteger(densityLevel) || densityLevel < 0 || densityLevel > 5))
+      fail("Density level must be an integer from 0 to 5.");
     // Read data version and page from one snapshot so cursors cannot mix imports.
     return db.transaction(async (tx) => {
       await tx.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
@@ -121,7 +128,12 @@ function createCitySearch(db) {
             JSON.stringify({ name: last.sort_name, id: last.id, fingerprint }),
           ).toString("base64url")
         : null;
+      // Both views use the same REPEATABLE READ snapshot and the full filter.
+      // Density ignores the cursor and page size, but never ignores area/name/state.
+      const density = densityLevel == null ? null
+        : await require("./density").summarizeDensity(tx, filter, densityLevel);
       return {
+        density,
         nodes,
         pageInfo: { hasNextPage, endCursor },
         datasetVersion: version,
@@ -129,4 +141,4 @@ function createCitySearch(db) {
     });
   };
 }
-module.exports = { createCitySearch, validate, buildCityQuery };
+module.exports = { createCitySearch, validate, buildCityQuery, buildCityPredicate };

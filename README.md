@@ -94,3 +94,16 @@ Publish the prepared source package with a fresh Git history. Do not upload the 
 Remaining work includes live Google validation, local Compose and production deployment validation, accessibility and cross-browser testing, more representative search evaluation, and larger-dataset/load testing. Current automated checks are correctness checks, not real-user metrics.
 
 Technical references: [PGlite PostGIS extension](https://pglite.dev/extensions/), [PostGIS geography distance/index semantics](https://postgis.net/docs/ST_DWithin.html), [GeoNames format and license](https://download.geonames.org/export/dump/readme.txt).
+
+
+## Server-side map density
+
+The optional `cities(input: {densityLevel: 4})` response includes `density { level total cells { id count latitude longitude bounds {west east south north} } }` alongside the city page. It counts **all matching populated-place records**, applying the same name/state/viewport/radius intersection, independently of cursor/page size. Both results use one REPEATABLE READ transaction, so a concurrent import cannot mix snapshots within the response. Omit `densityLevel` (or pass null) for the original page-only path; the frontend does this on Load more.
+
+The database fits a grid to the filtered data extent and groups records in SQL. Levels 0–5 divide each axis into 1–32 intervals: **at most 1,024 nonempty cells**, with no silent dropping or top-N truncation. Arithmetic mean coordinates locate group markers. Degenerate extents (one point or a straight line) are supported. Explicit antimeridian-crossing viewports unwrap longitudes before grouping and averaging, then wrap coordinates and bounds back for the map. Cell IDs and bounds are scoped to one filter/data snapshot and can change when those change.
+
+The map defaults to grouped all-match markers; switch to Loaded cities only for individual markers. Click a group to fit its bounds, select Current map view and search again to drill down. Grid detail is applied with Search; applied detail and marker mode are preserved in copied URLs. Summaries also work without Google Maps.
+
+This is equal-angle record-count aggregation, not equal-area population density, a distance-based clustering algorithm or automatic zoom-level clustering. The fixed response bound limits marker count and payload cardinality; it does not bound SQL execution time or prove production-scale performance. The CTE materializes filtered coordinates to reuse them for extent calculation and grouping. Existing spatial predicates retain their GiST-eligible form, but no aggregate-specific index-plan guarantee is claimed. Native database statement timeout remains 5 seconds.
+
+Tests cover full-catalog count conservation, filtered counts versus complete page traversal, cursor independence, output bounds, poles/date-line endpoints, coincident points, empty sets and frontend GraphQL operation compatibility. Native CI additionally interleaves a committed writer between version lookup and result queries to verify snapshot consistency. Test files run serially because native integration fixtures share the same disposable database.

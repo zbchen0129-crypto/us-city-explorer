@@ -18,10 +18,13 @@ const schema = buildSchema(`
   type RegionMatch { name: String!, matchType: MatchType! }
   input ViewportInput { west: Float!, east: Float!, south: Float!, north: Float! }
   input NearInput { latitude: Float!, longitude: Float!, radiusKm: Float! }
-  input CitySearchInput { query: String, state: String, first: Int = 25, after: String, viewport: ViewportInput, near: NearInput }
+  input CitySearchInput { query: String, state: String, first: Int = 25, after: String, densityLevel: Int, viewport: ViewportInput, near: NearInput }
   type City { id: ID!, name: String!, state: String!, population: String!, latitude: Float!, longitude: Float!, distanceKm: Float }
   type PageInfo { hasNextPage: Boolean!, endCursor: String }
-  type CityConnection { nodes: [City!]!, pageInfo: PageInfo!, datasetVersion: String! }
+  type DensityBounds { west: Float!, east: Float!, south: Float!, north: Float! }
+  type DensityCell { id: ID!, count: Int!, latitude: Float!, longitude: Float!, bounds: DensityBounds! }
+  type CityDensity { level: Int!, total: Int!, cells: [DensityCell!]! }
+  type CityConnection { density: CityDensity, nodes: [City!]!, pageInfo: PageInfo!, datasetVersion: String! }
   type Query {
     cities(input: CitySearchInput): CityConnection!
     getSuggestions(input: String!): [String!]!
